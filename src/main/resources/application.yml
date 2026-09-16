@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: kafka-mqtt-connector
+  data:
+    mongodb:
+      uri: mongodb://root:rootpassword@localhost:27017/kafka_mqtt_db?authSource=admin
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: kafka-mqtt-connector-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+mqtt:
+  broker-url: tcp://localhost:1883
+  client-id: kafka-mqtt-connector-client
+  default-topic: sensor/data
+  connection-timeout: 30
+  keep-alive-interval: 60
+  qos: 1

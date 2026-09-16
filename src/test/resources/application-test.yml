@@ -1,0 +1,15 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/test_db
+      auto-index-creation: true
+
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    consumer:
+      auto-offset-reset: earliest
+      group-id: integration-test-group
+
+mqtt:
+  broker-url: tcp://localhost:1883
+  client-id: integration-test-client

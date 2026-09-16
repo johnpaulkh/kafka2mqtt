@@ -1,0 +1,79 @@
+name: kafka-mqtt-connector
+
+services:
+  # ==========================================
+  # 1. Zookeeper & Kafka
+  # ==========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: kmc-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kmc-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: kmc-zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kmc-kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  # ==========================================
+  # 2. MongoDB
+  # ==========================================
+  mongodb:
+    image: mongo:7.0
+    container_name: kmc-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mongo_data:/data/db
+
+  # ==========================================
+  # 3. MQTT Broker (Eclipse Mosquitto)
+  # ==========================================
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: kmc-mosquitto
+    ports:
+      - "1883:1883"   # MQTT Default Port
+      - "9001:9001"   # MQTT WebSockets Port
+    command: >
+      sh -c "
+        echo 'listener 1883' > /mosquitto/config/mosquitto.conf &&
+        echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf &&
+        echo 'listener 9001' >> /mosquitto/config/mosquitto.conf &&
+        echo 'protocol websockets' >> /mosquitto/config/mosquitto.conf &&
+        /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
+      "
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+# Persistent Named Volumes
+volumes:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
+  mongo_data:
+  mosquitto_data:
+  mosquitto_log:
