@@ -4,23 +4,37 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.JsonPath
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.apache.logging.log4j.message.ObjectMessage
 import org.johnpaulkh.kafkamqtt.entity.Connector
 import org.springframework.stereotype.Service
 
 @Service
 class ConnectorProcessorFactory {
+    val log = KotlinLogging.logger {}
+
+    companion object {
+        private val PLACEHOLDER_REGEX = Regex("""\$[a-zA-Z0-9_]+""")
+    }
+
     fun createProcessor(
         connector: Connector,
         objectMapper: ObjectMapper,
     ) = object : ConnectorProcessor {
-        override val objectMapper = objectMapper
+        val getMqttTopicFunc = generateGetMqttTopic(connector, objectMapper)
+        val transformMessageFunc = generateTransformMessageFunc(connector, objectMapper)
 
-        val log = KotlinLogging.logger {}
-        val mqttTopicVariables = extractTokens(connector.descriptor.mqttTopic)
-        val mqttTopicTemplate = connector.descriptor.mqttTopic
-        val transformer = connector.transformer
+        override fun getMqttTopic(message: String): String = getMqttTopicFunc(message)
 
-        override fun getMqttTopic(message: String): String {
+        override fun transformMessage(message: String): String = transformMessageFunc(message)
+    }
+
+    fun generateGetMqttTopic(
+        connector: Connector,
+        objectMapper: ObjectMapper,
+    ): (message: String) -> String =
+        fun(message: String): String {
+            val mqttTopicTemplate = connector.descriptor.mqttTopic
+            val mqttTopicVariables = extractTokens(connector.descriptor.mqttTopic)
             val rootNode: JsonNode = objectMapper.readTree(message)
             val variableMap =
                 mqttTopicVariables.associateWith { token ->
@@ -34,9 +48,13 @@ class ConnectorProcessorFactory {
             return mqttTopicTemplate.resolveTemplate(variableMap)
         }
 
-        override fun transformMessage(message: String): String {
+    fun generateTransformMessageFunc(
+        connector: Connector,
+        objectMapper: ObjectMapper,
+    ): (message: String) -> String =
+        fun(message: String): String {
             val documentContext = JsonPath.parse(message)
-            return transformer
+            return connector.transformer
                 .let { it ?: return message }
                 .entries
                 .fold(mutableMapOf<String, Any?>()) { resultMap, entry ->
@@ -52,18 +70,12 @@ class ConnectorProcessorFactory {
                 .let { objectMapper.writeValueAsString(it) }
         }
 
-        fun String.resolveTemplate(values: Map<String, String>): String {
-            val regex = Regex("""\$[a-zA-Z0-9_]+""")
-
-            return regex.replace(this) { matchResult ->
-                val key = matchResult.value
-                values[key] ?: key
-            }
+    fun String.resolveTemplate(values: Map<String, String>): String =
+        PLACEHOLDER_REGEX.replace(this) { matchResult ->
+            val key = matchResult.value
+            values[key] ?: key
         }
 
-        fun extractTokens(descriptor: String): List<String> {
-            val regex = Regex("""\$[a-zA-Z0-9_]+""")
-            return regex.findAll(descriptor).map { it.value }.toList()
-        }
-    }
+    fun extractTokens(descriptor: String): List<String> =
+        PLACEHOLDER_REGEX.findAll(descriptor).map { it.value }.toList()
 }
