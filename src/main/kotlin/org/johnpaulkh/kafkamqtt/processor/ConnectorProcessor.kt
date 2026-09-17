@@ -6,4 +6,6 @@ interface ConnectorProcessor {
     val objectMapper: ObjectMapper
 
     fun getMqttTopic(message: String): String
+
+    fun transformMessage(message: String): String
 }

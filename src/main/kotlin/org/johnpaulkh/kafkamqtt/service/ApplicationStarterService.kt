@@ -8,10 +8,9 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 
 @Service
-class ConnectorLoaderService(
+class ApplicationStarterService(
     private val connectorRepository: ConnectorRepository,
-    private val kafkaService: KafkaService,
-    private val kafkaToMqttService: KafkaToMqttService,
+    private val connectorRegistrationService: ConnectorRegistrationService,
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -26,12 +25,7 @@ class ConnectorLoaderService(
         }
 
         connectors.forEach { connector ->
-            register(connector)
+            connectorRegistrationService.register(connector)
         }
-    }
-
-    fun register(connector: Connector) {
-        kafkaService.startListenerForConnector(connector)
-        kafkaToMqttService.registerProcessor(connector)
     }
 }

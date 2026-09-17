@@ -31,7 +31,9 @@ class KafkaToMqttService(
             return
         }
         val mqttTopic = processor.getMqttTopic(kafkaEventBody)
+        val messageBody = processor.transformMessage(kafkaEventBody)
+
         log.info { "mqtt message for kafka topic $topic and mqtt topic: $mqttTopic" }
-        mqttService.publish(mqttTopic, kafkaEventBody)
+        mqttService.publish(mqttTopic, messageBody)
     }
 }

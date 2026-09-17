@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service
 @Service
 class ConnectorService(
     private val connectorRepository: ConnectorRepository,
-    private val connectorLoaderService: ConnectorLoaderService,
+    private val connectorRegistrationService: ConnectorRegistrationService,
 ) {
     fun create(request: ConnectorCreateRequest): Connector =
         request
             .toEntity()
             .let { connectorRepository.save(it) }
             .also {
-                connectorLoaderService.register(it)
+                connectorRegistrationService.register(it)
             }
 
     fun list(): List<Connector> = connectorRepository.findAll()
@@ -41,5 +41,5 @@ class ConnectorService(
                 )
             }
             .let { connectorRepository.save(it) }
-            .also { connectorLoaderService.register(it) }!!
+            .also { connectorRegistrationService.register(it) }!!
 }
