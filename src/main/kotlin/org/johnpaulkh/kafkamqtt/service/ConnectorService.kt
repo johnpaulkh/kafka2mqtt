@@ -31,8 +31,15 @@ class ConnectorService(
         request: ConnectorUpdateRequest,
     ): Connector =
         connectorRepository.findByIdOrNull(id)
-            ?.copy(descriptor = request.descriptor)
-            ?.let { connectorRepository.save(it) }
-            ?.also { connectorLoaderService.register(it) }
-            ?: throw ServiceException(ErrorCode.CONNECTOR_NOT_FOUND)
+            .let {
+                it ?: throw ServiceException(errorCode = ErrorCode.CONNECTOR_NOT_FOUND)
+            }
+            .let { connector ->
+                connector.copy(
+                    descriptor = request.descriptor ?: connector.descriptor,
+                    transformer = request.transformer ?: request.transformer,
+                )
+            }
+            .let { connectorRepository.save(it) }
+            .also { connectorLoaderService.register(it) }!!
 }

@@ -15,6 +15,7 @@ data class Connector(
     @Indexed(unique = true)
     val name: String,
     val descriptor: TopicDescriptor,
+    val transformer: Map<String, String>? = null,
     @CreatedDate
     val createdAt: Instant = Instant.now(),
     @LastModifiedDate

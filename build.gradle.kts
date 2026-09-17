@@ -29,6 +29,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.jayway.jsonpath:json-path:3.0.0")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
