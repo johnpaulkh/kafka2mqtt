@@ -1,7 +1,6 @@
 package org.johnpaulkh.kafkamqtt.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.johnpaulkh.kafkamqtt.entity.Connector
 import org.johnpaulkh.kafkamqtt.entity.ConnectorRepository
 import org.springframework.boot.context.event.ApplicationStartedEvent
 import org.springframework.context.event.EventListener

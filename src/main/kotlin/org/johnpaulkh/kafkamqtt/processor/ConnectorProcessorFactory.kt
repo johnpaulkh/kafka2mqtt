@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.JsonPath
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.apache.logging.log4j.message.ObjectMessage
 import org.johnpaulkh.kafkamqtt.entity.Connector
 import org.springframework.stereotype.Service
 
@@ -60,10 +59,11 @@ class ConnectorProcessorFactory {
                 .fold(mutableMapOf<String, Any?>()) { resultMap, entry ->
                     val path = entry.value
                     val targetKey = entry.key
-                    val extractedValue = runCatching { documentContext.read(path) as Any? }.getOrElse {
-                        log.warn { "Fail to parse $path of message $message" }
-                        null
-                    }
+                    val extractedValue =
+                        runCatching { documentContext.read(path) as Any? }.getOrElse {
+                            log.warn { "Fail to parse $path of message $message" }
+                            null
+                        }
                     resultMap[targetKey] = extractedValue
                     resultMap
                 }
@@ -76,6 +76,5 @@ class ConnectorProcessorFactory {
             values[key] ?: key
         }
 
-    fun extractTokens(descriptor: String): List<String> =
-        PLACEHOLDER_REGEX.findAll(descriptor).map { it.value }.toList()
+    fun extractTokens(descriptor: String): List<String> = PLACEHOLDER_REGEX.findAll(descriptor).map { it.value }.toList()
 }

@@ -1,6 +1,7 @@
 package org.johnpaulkh.kafkamqtt.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -49,6 +50,13 @@ class KafkaMqttIntegrationTest {
             "status": "CREATED"
         }
         """.trimIndent()
+    private val transformedEvent =
+        """
+        {
+            "id": "$customerId",
+            "status": "CREATED"
+        }
+        """.trimIndent()
     private val receivedPayloads = mutableListOf<String>()
 
     @BeforeEach
@@ -93,9 +101,39 @@ class KafkaMqttIntegrationTest {
                         .contains(kafkaEvent)
                 }
         }
+
+        @Test
+        fun `given a connector with transformer is registered should publish to mqtt with transformed payloads`() {
+            // Given
+            connectorRegistered(
+                transformer =
+                    mapOf(
+                        "id" to "$.customerId",
+                        "status" to "$.status",
+                    ),
+            )
+            mqttTopicSubscribed(customerId)
+
+            // When
+            kafkaTemplate.send(kafkaTopic, kafkaEvent)
+
+            // Then
+
+            await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted {
+                    receivedPayloads.firstOrNull()
+                        ?.let { objectMapper.readValue<Map<String, String>>(it) }
+                        ?.let { mqttPayloadMap ->
+                            assertThat(mqttPayloadMap)
+                                .isEqualTo(objectMapper.readValue<Map<String, String>>(transformedEvent))
+                        }
+                }
+        }
     }
 
-    fun connectorRegistered() {
+    fun connectorRegistered(transformer: Map<String, String>? = null) {
         val connector =
             ConnectorCreateRequest(
                 name = "connector-test-001",
@@ -104,6 +142,7 @@ class KafkaMqttIntegrationTest {
                         kafkaTopic = kafkaTopic,
                         mqttTopic = mqttTopic,
                     ),
+                transformer = transformer,
             )
         val request = objectMapper.writeValueAsString(connector)
 
