@@ -118,7 +118,7 @@ class KafkaMqttIntegrationTest {
             kafkaTemplate.send(kafkaTopic, kafkaEvent)
 
             // Then
-
+            val expected = objectMapper.readValue<Map<String, String>>(transformedEvent)
             await()
                 .atMost(5, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
@@ -126,8 +126,7 @@ class KafkaMqttIntegrationTest {
                     receivedPayloads.firstOrNull()
                         ?.let { objectMapper.readValue<Map<String, String>>(it) }
                         ?.let { mqttPayloadMap ->
-                            assertThat(mqttPayloadMap)
-                                .isEqualTo(objectMapper.readValue<Map<String, String>>(transformedEvent))
+                            assertThat(mqttPayloadMap).isEqualTo(expected)
                         }
                 }
         }

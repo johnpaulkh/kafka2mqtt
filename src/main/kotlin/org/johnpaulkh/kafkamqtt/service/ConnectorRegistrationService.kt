@@ -12,4 +12,8 @@ class ConnectorRegistrationService(
         kafkaService.startListenerForConnector(connector)
         kafkaToMqttService.registerProcessor(connector)
     }
+
+    fun unregister(connectorId: String) {
+        kafkaService.stopListenerForConnector(connectorId)
+    }
 }

@@ -24,7 +24,10 @@ class ConnectorService(
 
     fun list(): List<Connector> = connectorRepository.findAll()
 
-    fun delete(id: String) = connectorRepository.deleteById(id)
+    fun delete(id: String) {
+        connectorRepository.deleteById(id)
+        connectorRegistrationService.unregister(id)
+    }
 
     fun update(
         id: String,
